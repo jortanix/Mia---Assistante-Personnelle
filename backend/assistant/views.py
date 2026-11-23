@@ -14,7 +14,15 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
-from .models import ActionProposal, Conversation, Memory, Message, Task, FocusSession
+from .models import (
+    ActionProposal,
+    Conversation,
+    Memory,
+    Message,
+    Reminder,
+    Task,
+    FocusSession,
+)
 from .serializers import (
     ActionProposalSerializer,
     MemorySerializer,
@@ -22,6 +30,7 @@ from .serializers import (
     ConversationDetailSerializer,
     ConversationSerializer,
     ConversationUpdateSerializer,
+    ReminderSerializer,
     TaskSerializer,
     FocusSessionSerializer,
     FocusSessionCreateSerializer,
@@ -144,6 +153,39 @@ def task_detail(request, task_id):
             status=status.HTTP_409_CONFLICT,
         )
     task.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["GET", "POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def reminder_list(request):
+    """Rappels planifiés (notifications de l'app mobile).
+
+    - ``GET`` : liste de tous les rappels ;
+    - ``POST`` : crée un rappel (``title``, ``due_at``, ``done``, ``repeat``).
+    """
+    if request.method == "POST":
+        serializer = ReminderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    reminders = Reminder.objects.all()
+    return Response(ReminderSerializer(reminders, many=True).data)
+
+
+@api_view(["PATCH", "DELETE"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def reminder_detail(request, reminder_id):
+    """Met à jour (``PATCH``, ex. ``done``) ou supprime (``DELETE``) un rappel."""
+    reminder = get_object_or_404(Reminder, pk=reminder_id)
+    if request.method == "PATCH":
+        serializer = ReminderSerializer(reminder, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(ReminderSerializer(reminder).data)
+    reminder.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 

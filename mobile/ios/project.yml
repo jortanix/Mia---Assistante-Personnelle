@@ -1,0 +1,43 @@
+name: Mia
+options:
+  bundleIdPrefix: fr.mia
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  xcodeVersion: "16.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    DEVELOPMENT_ASSET_PATHS: ""
+targets:
+  Mia:
+    type: application
+    platform: iOS
+    sources:
+      - path: Mia
+    info:
+      path: Mia/Info.plist
+      properties:
+        CFBundleDisplayName: Mia
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        NSMicrophoneUsageDescription: "Mia utilise le micro pour la dictée vocale de tes messages."
+        NSSpeechRecognitionUsageDescription: "Mia utilise la reconnaissance vocale pour saisir tes messages à la voix."
+        NSAppTransportSecurity:
+          # L'API est jointe par le réseau local (IP Tailscale 100.x en HTTP)
+          # ou par MagicDNS/Tailscale en HTTPS (certificat installé par l'app
+          # Tailscale). Aucun accès Internet direct : arbitraryLoads reste NO.
+          NSAllowsLocalNetworking: true
+          NSAllowsArbitraryLoads: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.mia.app
+        PRODUCT_NAME: Mia
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SWIFT_EMIT_LOC_STRINGS: YES
+        CODE_SIGN_STYLE: Automatic
+    scheme:
+      gatherCoverageData: false

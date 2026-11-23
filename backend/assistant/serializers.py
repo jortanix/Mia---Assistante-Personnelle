@@ -1,5 +1,13 @@
 from rest_framework import serializers
-from .models import ActionProposal, Conversation, Memory, Message, Task, FocusSession
+from .models import (
+    ActionProposal,
+    Conversation,
+    Memory,
+    Message,
+    Reminder,
+    Task,
+    FocusSession,
+)
 
 
 class ChatRequestSerializer(serializers.Serializer):
@@ -182,3 +190,24 @@ class FocusSessionUpdateSerializer(serializers.ModelSerializer):
             "duration_minutes",
             "label",
         ]
+
+
+class ReminderSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(
+        max_length=200,
+        allow_blank=False,
+        trim_whitespace=True,
+    )
+
+    class Meta:
+        model = Reminder
+        fields = [
+            "id",
+            "title",
+            "due_at",
+            "done",
+            "repeat",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]

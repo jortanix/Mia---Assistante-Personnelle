@@ -183,3 +183,28 @@ class FocusSession(models.Model):
 
     def __str__(self):
         return f"Session de concentration - {self.label or 'Sans titre'}"
+
+
+class Reminder(models.Model):
+    """Rappel planifié (utilisé par les notifications de l'app iOS)."""
+
+    class Repeat(models.TextChoices):
+        NONE = "none", "Aucune"
+        DAILY = "daily", "Chaque jour"
+
+    title = models.CharField(max_length=200)
+    due_at = models.DateTimeField()
+    done = models.BooleanField(default=False)
+    repeat = models.CharField(
+        max_length=10,
+        choices=Repeat.choices,
+        default=Repeat.NONE,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["due_at", "-id"]
+
+    def __str__(self):
+        return f"{self.title} ({self.due_at:%d/%m %H:%M})"

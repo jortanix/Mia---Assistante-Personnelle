@@ -26,7 +26,14 @@ SECRET_KEY = 'django-insecure--=z)s7vo0zu08t!o-bt%_=@t+kj&wkp3bq00q15guhl1awb&gu
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# Hôtes autorisés : local par défaut. Pour l'accès iPhone via Tailscale,
+# ajouter DJANGO_ALLOWED_HOSTS=mia-pc,<hostname.ts.net> à l'environnement.
+_DJANGO_ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
+    if h.strip()
+]
+ALLOWED_HOSTS = [".localhost", "127.0.0.1", "localhost"] + _DJANGO_ALLOWED_HOSTS
 
 
 # Application definition
@@ -47,6 +54,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'config.middleware.MiaApiKeyMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',

@@ -18,6 +18,8 @@ from .views import (
     focus_session_undo,
     focus_session_reset,
     briefing_view,
+    reminder_list,
+    reminder_detail,
 )
 
 
@@ -51,4 +53,6 @@ urlpatterns = [
     path("focus-sessions/<int:session_id>/complete/", focus_session_complete, name="focus-session-complete"),
     path("focus-sessions/<int:session_id>/undo/", focus_session_undo, name="focus-session-undo"),
     path("focus-sessions/<int:session_id>/reset/", focus_session_reset, name="focus-session-reset"),
+    path("reminders/", reminder_list, name="reminder-list"),
+    path("reminders/<int:reminder_id>/", reminder_detail, name="reminder-detail"),
 ]
