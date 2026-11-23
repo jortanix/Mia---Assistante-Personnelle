@@ -1,0 +1,31 @@
+# Python / uv
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# Django — données locales et journaux
+backend/db.sqlite3
+backend/server.log
+backend/server.err.log
+*.log
+
+# Node / Vite
+desktop/node_modules/
+desktop/dist/
+desktop/.vite/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Système
+.DS_Store
+Thumbs.db
+
+# Secrets — ne jamais versionner
+.env
+.env.*
+!.env.example

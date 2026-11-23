@@ -1,0 +1,3 @@
+backend/assistant/memory_rules.py
+backend/assistant/test_memory_proposals.py
+desktop/src/MemoryProposalCard.tsx

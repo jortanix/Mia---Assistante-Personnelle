@@ -1,0 +1,58 @@
+MIA — concentration locale
+
+Pré-requis : le lot Édition des tâches est installé.
+1. Arrêter le frontend (Ctrl+C). Le backend peut rester en marche.
+2. Extraire le ZIP directement dans C:\Users\lmoret1\MIA.
+3. Installer :
+
+Set-Location C:\Users\lmoret1\MIA\backend
+uv run python ..\installer_concentration_mia.py
+Set-Location ..\desktop
+node --test scripts/test_focus_timer.mjs
+npm run build
+npm run dev
+
+Tests du minuteur : 14 tests, 14 réussis attendus. Pas de modification du backend,
+pas de migration ni dépendance à installer. Actualiser Comet après relance.
+
+Fonctions : panneau Concentration sous le titre MIA, durées 5/15/25/45 minutes,
+intitulé facultatif de 200 caractères, démarrer/pause/reprise/réinitialisation,
+effacement de l'intitulé et retour à une session neutre de 25 minutes.
+Aucune tâche n'est créée, modifiée ou validée. Pas de points ni de culpabilisation.
+Aucun accès au micro, aucune lecture vocale ni notification ajouté.
+
+Le minuteur calcule le temps restant depuis une date de fin absolue, pas en
+comptant les passages d'un intervalle. Une actualisation ne redémarre pas la
+durée. Au retour après la fin prévue, il affiche Terminée. Fermer la page
+n'envoie aucun son/notification ; il ne s'agit pas d'une alarme en arrière-plan.
+Les changements de l'horloge système peuvent affecter le temps affiché.
+
+Stockage : durée, état et intitulé dans localStorage de cette adresse, dans ce
+profil de navigateur. Pas dans la base Django ni dans les préférences de Mia.
+Ce stockage n'est pas chiffré ; ne pas y mettre d'information sensible. Un autre
+navigateur ou une autre adresse/port ne retrouve pas cette session. Effacer les
+données du site supprime la récupération. Les onglets à la même adresse partagent
+la session ; éviter les commandes simultanées (la dernière écriture l'emporte).
+Effacer la session remplace son contenu par une session neutre sans intitulé.
+Si le stockage est bloqué, le panneau signale qu'il ne peut pas sauvegarder.
+
+Contrôle manuel : choisir 5 minutes, saisir un intitulé, démarrer, attendre quelques
+secondes, mettre en pause, vérifier que l'affichage ne diminue plus. Actualiser :
+la pause et l'intitulé doivent revenir. Reprendre, actualiser : le compte à rebours
+ne doit pas revenir à 5 minutes. Réinitialiser demande confirmation si la session
+est en cours ou en pause. Effacer demande confirmation si nécessaire.
+Fermer le panneau ne met pas le minuteur en pause.
+
+Validation effectuée ici : 14 tests Node du moteur, simulation d'installation.
+La compilation de l'interface et le test manuel restent à faire sur le PC.
+Le fichier .d.mts fournit les types TypeScript du module JavaScript .mjs.
+
+Installation : modifications ciblées dans App.tsx, ajout du CSS à App.css ;
+les nouveaux fichiers sont préparés avant écriture et les originaux sauvegardés
+dans sauvegardes/avant-concentration-<date>. Arrêt si les repères diffèrent.
+Restitution des fichiers en cas d'erreur d'écriture.
+
+Retour arrière : arrêter le frontend, restaurer App.tsx et App.css sauvegardés,
+supprimer les nouveaux fichiers listés dans nouveaux-fichiers.txt, relancer.
+Le minuteur du navigateur n'est pas effacé par la restauration du code : utiliser
+Effacer la session avant restauration pour ne laisser qu'un état neutre.

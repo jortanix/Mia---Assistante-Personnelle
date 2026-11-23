@@ -1,0 +1,26 @@
+
+
+@transaction.atomic
+def _create_memory_proposal_turn(conversation, user_message, content):
+    Message.objects.create(
+        conversation=conversation,
+        role=Message.Role.USER,
+        content=user_message,
+    )
+    assistant_message = Message.objects.create(
+        conversation=conversation,
+        role=Message.Role.ASSISTANT,
+        content=(
+            "Veux-tu que je retienne cette préférence ? "
+            "Tu peux choisir Retenir ou Pas maintenant sous ma réponse."
+        ),
+    )
+    proposal = ActionProposal.objects.create(
+        conversation=conversation,
+        assistant_message=assistant_message,
+        action=ActionProposal.Action.SAVE_MEMORY,
+        data={"content": content},
+    )
+    _update_auto_title(conversation, user_message)
+    conversation.save(update_fields=["updated_at"])
+    return proposal

@@ -1,0 +1,45 @@
+@api_view(["PATCH", "DELETE"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+@transaction.atomic
+def task_detail(request, task_id):
+    task = get_object_or_404(Task, pk=task_id)
+    expected = request.data.get("expected_updated_at")
+    if expected is None:
+        expected_date = task.updated_at
+    else:
+        try:
+            expected_date = parse_datetime(expected) if isinstance(expected, str) else None
+        except (ValueError, TypeError, OverflowError):
+            expected_date = None
+        if expected_date is None or timezone.is_naive(expected_date):
+            return Response(
+                {"error": "Version de tâche invalide. Actualise la liste."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    current = Task.objects.filter(pk=task_id, updated_at=expected_date)
+    if request.method == "PATCH":
+        serializer = TaskSerializer(task, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        values = dict(serializer.validated_data)
+        values["updated_at"] = timezone.now()
+        updated = current.update(**values)
+        if not updated:
+            return Response(
+                {"error": "Cette tâche a changé ou a été supprimée. Annule la modification et actualise la liste avant de réessayer."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        task.refresh_from_db()
+        return Response(TaskSerializer(task).data)
+
+    claimed = current.update(updated_at=timezone.now())
+    if not claimed:
+        return Response(
+            {"error": "Cette tâche a changé. Actualise la liste avant de confirmer sa suppression."},
+            status=status.HTTP_409_CONFLICT,
+        )
+    task.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+

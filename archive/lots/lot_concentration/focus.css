@@ -1,0 +1,9 @@
+
+
+/* MIA : concentration locale */
+.focus-panel { padding: 8px 16px; }
+.focus-panel-body { border-top: 1px solid #34384d; margin-top: 8px; padding-top: 8px; max-height: 48vh; overflow-y: auto; }
+.focus-panel-body label { display: block; margin: 10px 0; }
+.focus-panel-body input, .focus-panel-body select { display: block; box-sizing: border-box; width: 100%; padding: 8px; margin-top: 5px; color: #edf0ff; background: #171c2b; border: 1px solid #34384d; border-radius: 8px; }
+.focus-clock { font-size: 2rem; font-variant-numeric: tabular-nums; margin: 8px 0; }
+.focus-note { font-size: .85rem; opacity: .8; }

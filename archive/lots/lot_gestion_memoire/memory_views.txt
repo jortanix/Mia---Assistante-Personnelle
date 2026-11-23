@@ -1,0 +1,17 @@
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def memory_list(request):
+    memories = Memory.objects.order_by("-confirmed_at", "-id")
+    return Response(MemorySerializer(memories, many=True).data)
+
+
+@api_view(["DELETE"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def memory_detail(request, memory_id):
+    memory = get_object_or_404(Memory, pk=memory_id)
+    memory.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

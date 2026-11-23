@@ -1,0 +1,2 @@
+desktop/src/MemoryPanel.tsx
+backend/assistant/test_memory_management.py

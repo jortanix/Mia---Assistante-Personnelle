@@ -1,0 +1,16 @@
+@api_view(["PATCH", "DELETE"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def task_detail(request, task_id):
+    task = get_object_or_404(Task, pk=task_id)
+
+    if request.method == "PATCH":
+        serializer = TaskSerializer(task, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(TaskSerializer(task).data)
+
+    task.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+

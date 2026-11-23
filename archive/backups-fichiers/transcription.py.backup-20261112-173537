@@ -1,0 +1,106 @@
+import threading
+
+from django.conf import settings
+
+
+class TranscriptionUnavailableError(Exception):
+    """Le moteur de transcription est indisponible."""
+
+
+class TranscriptionError(Exception):
+    """La transcription a échoué."""
+
+
+_model = None
+_model_lock = threading.Lock()
+_transcribe_lock = threading.Lock()
+
+
+def _get_model():
+    global _model
+
+    if _model is not None:
+        return _model
+
+    with _model_lock:
+        if _model is None:
+            from faster_whisper import WhisperModel
+
+            try:
+                _model = WhisperModel(
+                    settings.WHISPER_MODEL,
+                    device=settings.WHISPER_DEVICE,
+                    compute_type=settings.WHISPER_COMPUTE_TYPE,
+                )
+            except Exception as exc:
+                raise TranscriptionUnavailableError(
+                    "Le moteur de transcription est indisponible."
+                ) from exc
+
+    return _model
+
+
+def get_audio_duration(path: str) -> float:
+    """Retourne la durée (secondes) de la piste audio d'un fichier."""
+    import av
+
+    try:
+        container = av.open(path)
+    except Exception as exc:
+        raise TranscriptionError(
+            "Le fichier audio est invalide."
+        ) from exc
+
+    try:
+        audio_streams = [
+            stream
+            for stream in container.streams
+            if stream.type == "audio"
+        ]
+        if not audio_streams:
+            raise TranscriptionError(
+                "Le fichier ne contient aucune piste audio."
+            )
+
+        stream = audio_streams[0]
+        if stream.duration:
+            duration = float(stream.duration) * float(stream.time_base)
+            if duration > 0:
+                return duration
+
+        if container.duration:
+            return float(container.duration) / 1_000_000
+
+        raise TranscriptionError(
+            "Impossible de déterminer la durée du fichier audio."
+        )
+    finally:
+        container.close()
+
+
+def transcribe_audio(path: str, language: str | None = None) -> str:
+    with _transcribe_lock:
+        try:
+            model = _get_model()
+        except TranscriptionUnavailableError:
+            raise
+
+        try:
+            segments, _info = model.transcribe(
+                path,
+                language=language or settings.WHISPER_LANGUAGE,
+            )
+            text = "".join(segment.text for segment in segments).strip()
+        except TranscriptionUnavailableError:
+            raise
+        except Exception as exc:
+            raise TranscriptionError(
+                "La transcription a échoué."
+            ) from exc
+
+    if not text:
+        raise TranscriptionError(
+            "Aucune parole n'a été détectée dans l'audio."
+        )
+
+    return text

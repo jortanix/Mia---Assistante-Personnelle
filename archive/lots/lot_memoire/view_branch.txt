@@ -1,0 +1,12 @@
+            preference = detect_memory_preference(message)
+            if preference is not None:
+                proposal = _create_memory_proposal_turn(conversation, message, preference)
+                reply = proposal.assistant_message.content
+                yield _encode_stream_event("delta", content=reply)
+                yield _encode_stream_event(
+                    "done",
+                    conversation_id=conversation_id,
+                    action_proposal=ActionProposalSerializer(proposal).data,
+                )
+                return
+

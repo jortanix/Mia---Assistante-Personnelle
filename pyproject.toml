@@ -1,0 +1,12 @@
+[project]
+name = "mia"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "django>=6.1.2",
+    "djangorestframework>=3.18.3",
+    "djangorestframework-stubs>=3.18.1",
+    "requests>=2.34.2",
+    "faster-whisper>=1.0.0",
+    "av==18.1.0",
+]

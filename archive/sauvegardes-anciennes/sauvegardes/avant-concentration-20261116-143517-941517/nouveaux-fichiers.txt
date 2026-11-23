@@ -1,0 +1,4 @@
+desktop/src/FocusPanel.tsx
+desktop/src/focusTimer.mjs
+desktop/src/focusTimer.d.mts
+desktop/scripts/test_focus_timer.mjs

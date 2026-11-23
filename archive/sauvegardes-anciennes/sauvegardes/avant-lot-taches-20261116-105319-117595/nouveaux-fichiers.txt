@@ -1,0 +1,5 @@
+backend/assistant/task_rules.py
+backend/assistant/test_task_flow.py
+desktop/src/taskApi.ts
+desktop/src/TaskPanel.tsx
+desktop/src/TaskProposalCard.tsx

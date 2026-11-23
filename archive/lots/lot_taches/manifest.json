@@ -1,0 +1,22 @@
+{
+  "expected": {
+    "backend/assistant/views.py": "90ff317ae4a5fcde8bf0325cd5765bb9c45b36e5f91e8a9ec3ae575b1361928f",
+    "backend/assistant/serializers.py": "4b29692b297b2e273e121976e03397a5d3d645d108c7242d95c51884a79af2b7",
+    "backend/assistant/urls.py": "5e56743a3743e3c3791c46f0724fd32581e75cd588097a70bf57bcff395dcaff",
+    "desktop/src/App.tsx": "ae5b372b5e8fd49d767b40be41c5c934eea520d051ddf39a8867abe50776370a",
+    "desktop/src/App.css": "8580045354703c3b99db7c40287572e2fb18d0cddcdfa07108a2136d9330fc30",
+    "backend/assistant/models.py": "4903b4294429264c916afa2c95122661981f458a3196b21d723c13f84fc60a90"
+  },
+  "files": [
+    "backend/assistant/views.py",
+    "backend/assistant/serializers.py",
+    "backend/assistant/urls.py",
+    "backend/assistant/task_rules.py",
+    "backend/assistant/test_task_flow.py",
+    "desktop/src/App.tsx",
+    "desktop/src/App.css",
+    "desktop/src/taskApi.ts",
+    "desktop/src/TaskPanel.tsx",
+    "desktop/src/TaskProposalCard.tsx"
+  ]
+}
