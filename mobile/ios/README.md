@@ -28,6 +28,14 @@ xcodegen generate
 open Mia.xcodeproj
 ```
 
+…ou plus simple, en une commande :
+
+```bash
+cd mobile/ios
+./scripts/build.sh        # build simulateur
+./scripts/build.sh device # build pour iPhone branché
+```
+
 Sélectionner la team de signature, l'iPhone comme destination, puis Run.
 Dans l'app : Réglages → URL du backend (`http://<IP.tailscale>:8000`) + clés.
 

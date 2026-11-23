@@ -1,0 +1,13 @@
+# Générés par XcodeGen / xcodebuild — la source de vérité est project.yml
+Mia.xcodeproj/
+Mia.xcworkspace/
+build/
+DerivedData/
+
+# Généré par XcodeGen (info.path dans project.yml)
+Mia/Info.plist
+
+# Divers Mac / Xcode
+.DS_Store
+xcuserdata/
+*.xcuserstate
