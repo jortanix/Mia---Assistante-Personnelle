@@ -58,6 +58,23 @@ iPhone ── Tailscale ──> PC (100.x.y.z)
    $env:DJANGO_ALLOWED_HOSTS = "mia-pc,<IP.tailscale>,<nom>.ts.net"
    & ..\.venv\Scripts\python.exe manage.py runserver 0.0.0.0:8000
    ```
+
+   ⚠️ Les `$env:…` ci-dessus ne valent que pour la **session PowerShell
+   courante**. Pour persister (variables utilisateur, présentes dans chaque
+   terminal) :
+
+   ```powershell
+   # Une fois, puis nouveau terminal
+   setx ICLOUD_APPLE_ID "…"
+   setx ICLOUD_MAIL_LOGIN "…@icloud.com"
+   setx ICLOUD_APP_PASSWORD "…"
+   setx MIA_API_KEY "une-clé-choisie"
+   setx BRIEFING_API_KEY "une-autre-clé"
+   setx DJANGO_ALLOWED_HOSTS "mia-pc,<IP.tailscale>,<nom>.ts.net"
+   ```
+
+   (Ou *Paramètres → Système → Informations système → Variables
+   d'environnement*. Jamais de secret en dur dans les fichiers du dépôt.)
 5. Depuis l'iPhone (Safari → `http://<IP.tailscale>:8000/api/briefing//`
    avec l'en-tête manquant, tu dois recevoir `401 {"error":"Accès MIA
    refusé."}` si `MIA_API_KEY` est définie — c'est le comportement attendu).
@@ -73,20 +90,46 @@ xcodegen generate        # génère Mia.xcodeproj depuis project.yml
 open Mia.xcodeproj
 ```
 
-- Dans Xcode : *Target Mia → Signing & Capabilities* → cocher ton *Team*
-  (compte Apple personnel suffit pour tests sur appareil signé 7 jours, ou
-  compte développeur pour ~90 jours / TestFlight).
-- Choisir ton iPhone comme destination et *Run*.
-- Dans l'app, *Réglages* : renseigner
-  - URL du backend : `http://<IP.tailscale>:8000` (ou `https://…ts.net`)
-  - Clés `MIA_API_KEY` et `BRIEFING_API_KEY` (stockées dans le trousseau).
-
 Transport (ATS) : l'`Info.plist` générée par XcodeGen autorise le **réseau
 local** (`NSAllowsLocalNetworking`, donc les IP Tailscale 100.x en HTTP), et
 refuse tout chargement arbitraire sur Internet (`NSAllowsArbitraryLoads: NO`).
 SSL toujours préféré : avec `https://<nom>.ts.net`, Tailscale fournit un
 certificat valide sur l'iPhone (via l'app Tailscale), chiffrement de bout en
 bout.
+
+### 2bis. Vérifier la chaîne depuis le Mac (avant de lancer l'app)
+
+Sur le Mac (Tailscale allumé des deux côtés), tester que l'API répond et que
+la clé est bien exigée :
+
+```bash
+# Sans clé → 401 attendu
+curl -i "http://<IP.tailscale>:8000/api/reminders/" | head -n 1
+
+# Avec la clé → 200
+curl -i -H "Authorization: Bearer <MIA_API_KEY>" \
+  "http://<IP.tailscale>:8000/api/reminders/" | head -n 1
+```
+
+Si le premier renvoie `401` et le second `200`, la garde distante fonctionne.
+En cas d'`ERR_CONNECTION/refused`, vérifier `tailscale status` (les deux
+appareils sont-ils en ligne ?) et `DJANGO_ALLOWED_HOSTS` (contient l'IP/hostname).
+
+### 2ter. Lancer l'app sur l'iPhone
+
+1. Dans Xcode : *Target Mia → Signing & Capabilities* → cocher ta *Team*. Un
+   compte Apple gratuit signe pour 7 jours sur ton iPhone (réitérer ensuite) ;
+   le compte développeur ($99/an) signe ~90 jours et ouvre TestFlight/APNs.
+2. iPhone branché en USB (ou même réseau) : *Window → Devices and
+   Simulators* -> ton iPhone. iOS 16+ : activer **Developer Mode**
+   (*Réglages → Confidentialité et sécurité → Mode développeur*), puis
+   autoriser le profil de confiance dans *Réglages → Général → VPN et gestion
+   d'appareils* (profil de signature).
+3. Choisir l'iPhone comme destination et *Run*. La première compilation
+   prend quelques minutes (module cache).
+4. Dans l'app, *Réglages* : URL `http://<IP.tailscale>:8000`, coller
+   `MIA_API_KEY` et `BRIEFING_API_KEY`. Le premier échange avec le backend
+   confirme la chaîne complète.
 
 ## Étape 3 — Les fonctions Siri
 
