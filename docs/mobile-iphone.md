@@ -131,6 +131,22 @@ appareils sont-ils en ligne ?) et `DJANGO_ALLOWED_HOSTS` (contient l'IP/hostname
    `MIA_API_KEY` et `BRIEFING_API_KEY`. Le premier échange avec le backend
    confirme la chaîne complète.
 
+### Checklist « une fois rentré à la maison »
+
+1. [ ] Mac sous Tailscale (même compte) ; PC et iPhone aussi, les trois en ligne.
+2. [ ] `brew install xcodegen` si absent.
+3. [ ] `git pull` du dépôt sur le Mac (ou copie de `mobile/ios/`).
+4. [ ] Backend lancé sur le PC : `setx` des variables faites, puis
+       `& ..\.venv\Scripts\python.exe manage.py runserver 0.0.0.0:8000`.
+5. [ ] Depuis le Mac : `curl` sans clé → 401, avec clé → 200 (guide 2bis).
+6. [ ] `cd mobile/ios && ./scripts/build.sh device` (ou Xcode via *Run*).
+7. [ ] Xcode : *Signing & Capabilities* → ta Team (compte développeur).
+8. [ ] iPhone branché en USB : Developer Mode activé, profil de confiance
+       accepté, *Run*.
+9. [ ] Dans l'app : URL + clés → chat, briefing, rappels OK.
+10. [ ] Siri : *Réglages → Siri et Recherche → Raccourcis de Siri* →
+    « Demander à Mia … ».
+
 ## Étape 3 — Les fonctions Siri
 
 Une fois l'app installée et lancée une fois :
@@ -146,11 +162,17 @@ Les notifications : à la première ouverture Mia demande l'autorisation de
 notifications locales (pas besoin du PC allumé au moment de la notification,
 uniquement pour la synchronisation).
 
-## Étape 4 — Déploiement à long terme
+## Étape 4 — Déploiement à long terme (compte développeur $99/an)
 
-- App Store : compte développeur ($99/an). Signé, l'app gagne APNs (push hors
-  synchronisation), widgets, etc.
-- Ou distribution interne via TestFlight.
+- **TestFlight** : installe l'app sur l'iPhone **sans câble**, depuis ton
+  compte développeur (jusqu'à 90 jours par build, profils de test Apple ID).
+  Idéal pour les mises à jour quand tu rentres.
+- **APNs (push)** : différé — v1 utilise les notifications locales
+  synchronisées depuis `/api/reminders/`. Le push Apple (clic sur
+  notification → actions, badges à jour quand l'app est fermée) nécessitera
+  une clé APNs et un petit relais backend ; à porter plus tard.
+- **Magasin / distribution** : TestFlight pour la famille d'abord ; l'App
+  Store reste possible avec ton compte (revue Apple, configuration requise).
 - Jamais d'exposition directe de `/api/` sur Internet : Tailscale reste la
   frontière (ou un reverse proxy TLS auto-hébergé pour un accès hors réseau).
 
