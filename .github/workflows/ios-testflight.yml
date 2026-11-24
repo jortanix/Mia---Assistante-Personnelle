@@ -30,9 +30,30 @@ jobs:
       TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+      ASC_KEY: ${{ secrets.ASC_API_KEY }}
       BUNDLE_ID: fr.mia.app
     steps:
       - uses: actions/checkout@v5
+
+      - name: Vérifier les secrets requis
+        shell: bash
+        run: |
+          missing=""
+          for name in TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_KEY; do
+            val="$(printenv "$name" || true)"
+            if [ -z "$val" ]; then missing="$missing ${name}"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Secrets GitHub manquants :$missing"
+            echo "Ajoute-les dans Settings > Secrets and variables > Actions,"
+            echo "puis relance le workflow :"
+            echo "  APPLE_TEAM_ID      -> Team ID (developer.apple.com/account -> Membership details)"
+            echo "  ASC_API_KEY_ID     -> Key ID de la clé API App Store Connect"
+            echo "  ASC_API_ISSUER_ID  -> Issuer ID App Store Connect"
+            echo "  ASC_API_KEY        -> contenu du fichier AuthKey_<ID>.p8"
+            exit 1
+          fi
+          echo "✅ Les 4 secrets sont présents."
 
       - name: Installer XcodeGen
         run: brew install xcodegen
@@ -41,9 +62,15 @@ jobs:
         shell: bash
         run: |
           mkdir -p "$HOME/.appstoreconnect/private-keys"
-          echo "${{ secrets.ASC_API_KEY }}" > \
-            "$HOME/.appstoreconnect/private-keys/AuthKey_${ASC_KEY_ID}.p8"
-          chmod 600 "$HOME/.appstoreconnect/private-keys/AuthKey_${ASC_KEY_ID}.p8"
+          KEY_FILE="$HOME/.appstoreconnect/private-keys/AuthKey_${ASC_KEY_ID}.p8"
+          printf '%s\n' "$ASC_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          if ! grep -q "BEGIN PRIVATE KEY" "$KEY_FILE"; then
+            echo "::error::ASC_API_KEY ne ressemble pas à un .p8 valide"
+            echo "(il doit contenir '-----BEGIN PRIVATE KEY-----')."
+            exit 1
+          fi
+          echo "✅ Clé écrite : $KEY_FILE ($(wc -c < "$KEY_FILE") octets)"
 
       - name: Générer le projet Xcode
         working-directory: mobile/ios
