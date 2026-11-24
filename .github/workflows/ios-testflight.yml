@@ -70,7 +70,14 @@ jobs:
             echo "(il doit contenir '-----BEGIN PRIVATE KEY-----')."
             exit 1
           fi
+          # altool ne prend pas de chemin de clé : il la cherche tout seul dans
+          # ~/.appstoreconnect/private_keys (avec underscore). Copie pour lui.
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          KEY_FILE_ALTOOL="$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          cp "$KEY_FILE" "$KEY_FILE_ALTOOL"
+          chmod 600 "$KEY_FILE_ALTOOL"
           echo "✅ Clé écrite : $KEY_FILE ($(wc -c < "$KEY_FILE") octets)"
+          echo "   + copie pour altool : $KEY_FILE_ALTOOL"
 
       - name: Générer le projet Xcode
         working-directory: mobile/ios
