@@ -77,6 +77,8 @@ jobs:
               <string>app-store</string>
               <key>signingStyle</key>
               <string>automatic</string>
+              <key>stripSwiftSymbols</key>
+              <true/>
           </dict>
           </plist>
           EOF
@@ -87,7 +89,8 @@ jobs:
             -allowProvisioningUpdates \
             -authenticationKeyPath "$HOME/.appstoreconnect/private-keys/AuthKey_${ASC_KEY_ID}.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            TEAM_ID="$TEAM_ID"
 
       - name: Envoyer à TestFlight
         working-directory: mobile/ios
