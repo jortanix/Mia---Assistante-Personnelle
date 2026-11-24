@@ -2,7 +2,7 @@ import SwiftUI
 
 @MainActor
 final class TasksViewModel: ObservableObject {
-    @Published var tasks: [Task] = []
+    @Published var tasks: [Todo] = []
     @Published var isLoading = false
     @Published var errorText: String?
 
@@ -17,7 +17,7 @@ final class TasksViewModel: ObservableObject {
         }
     }
 
-    func toggle(_ task: Task) {
+    func toggle(_ task: Todo) {
         Task {
             do {
                 let updated = try await TaskService.toggle(task)
@@ -30,7 +30,7 @@ final class TasksViewModel: ObservableObject {
         }
     }
 
-    func delete(_ task: Task) {
+    func delete(_ task: Todo) {
         Task {
             do {
                 try await TaskService.delete(task)

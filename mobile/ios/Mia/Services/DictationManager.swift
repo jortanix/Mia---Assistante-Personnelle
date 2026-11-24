@@ -88,7 +88,11 @@ final class DictationManager: NSObject, ObservableObject {
     }
 
     static func requestAuthorization() async -> Bool {
-        let speechStatus = await SFSpeechRecognizer.requestAuthorization()
+        let speechStatus = await withCheckedContinuation { continuation in
+            SFSpeechRecognizer.requestAuthorization { status in
+                continuation.resume(returning: status)
+            }
+        }
         guard speechStatus == .authorized else { return false }
         return await AVAudioApplication.requestRecordPermission()
     }

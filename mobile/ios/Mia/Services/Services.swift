@@ -79,11 +79,11 @@ private struct EmptyBody: Encodable {}
 enum TaskService {
     static let client = APIClient()
 
-    static func list() async throws -> [Task] {
+    static func list() async throws -> [Todo] {
         try await client.request("/api/tasks/")
     }
 
-    static func update(_ task: Task) async throws -> Task {
+    static func update(_ task: Todo) async throws -> Todo {
         struct Body: Encodable {
             let title: String?
             let description: String?
@@ -100,13 +100,13 @@ enum TaskService {
     }
 
     @discardableResult
-    static func toggle(_ task: Task) async throws -> Task {
+    static func toggle(_ task: Todo) async throws -> Todo {
         var copy = task
         copy.status = task.isDone ? "todo" : "done"
         return try await update(copy)
     }
 
-    static func delete(_ task: Task) async throws {
+    static func delete(_ task: Todo) async throws {
         struct Body: Encodable { let expected_updated_at: String }
         try await client.requestNoContent("/api/tasks/\(task.id)/".trimmingCharacters(in: .whitespaces))
     }

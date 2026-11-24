@@ -68,7 +68,7 @@ struct BriefingIntent: AppIntent {
         if briefing.partial {
             parts.append("Ce point est partiel.")
         }
-        return .result(dialog: parts.joined(separator: " "))
+        return .result(dialog: IntentDialog.full(parts.joined(separator: " ")))
     }
 }
 
@@ -76,7 +76,7 @@ struct NewReminderIntent: AppIntent {
     static var title: LocalizedStringResource = "Créer un rappel"
     static var description = IntentDescription("Crée un rappel dans Mia et planifie la notification.")
     static var parameterSummary: some ParameterSummary {
-        When(\.$date) {
+        When(\.$date, .hasValue) {
             Summary("Créer un rappel \(\.$title) à \(\.$date)")
         } otherwise: {
             Summary("Créer un rappel \(\.$title) dans une heure")

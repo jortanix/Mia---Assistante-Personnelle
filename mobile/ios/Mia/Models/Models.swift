@@ -87,7 +87,7 @@ struct ActionProposal: Codable, Identifiable {
     let action: String
     let data: ActionProposalData?
     let status: String
-    let task: Task?
+    let task: Todo?
     let created: Date
 
     enum CodingKeys: String, CodingKey {
@@ -106,7 +106,9 @@ struct ActionProposalData: Codable {
 
 // MARK: - Tâches
 
-struct Task: Codable, Identifiable, Equatable {
+// NB : nommé `Todo` (et non `Task`) pour ne pas masquer `Task` de Swift
+// Concurrency, sans quoi tous les `Task { … }` des vues deviennent invalides.
+struct Todo: Codable, Identifiable, Equatable {
     let id: Int
     var title: String
     var description: String
@@ -197,7 +199,7 @@ struct FocusSession: Codable, Identifiable {
     let completedAt: Date?
     let cycle: Int?
     let completedCycle: Int?
-    let task: Task?
+    let task: Todo?
 
     enum CodingKeys: String, CodingKey {
         case id, phase, deadline, outcome, cycle, task
