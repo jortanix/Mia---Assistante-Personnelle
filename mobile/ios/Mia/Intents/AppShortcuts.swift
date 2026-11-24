@@ -68,7 +68,7 @@ struct BriefingIntent: AppIntent {
         if briefing.partial {
             parts.append("Ce point est partiel.")
         }
-        return .result(dialog: IntentDialog.full(parts.joined(separator: " ")))
+        return .result(dialog: IntentDialog(stringLiteral: parts.joined(separator: " ")))
     }
 }
 
@@ -76,7 +76,7 @@ struct NewReminderIntent: AppIntent {
     static var title: LocalizedStringResource = "Créer un rappel"
     static var description = IntentDescription("Crée un rappel dans Mia et planifie la notification.")
     static var parameterSummary: some ParameterSummary {
-        When(\.$date, .hasValue) {
+        When(\.$date, .hasAnyValue) {
             Summary("Créer un rappel \(\.$title) à \(\.$date)")
         } otherwise: {
             Summary("Créer un rappel \(\.$title) dans une heure")
@@ -94,7 +94,7 @@ struct NewReminderIntent: AppIntent {
         let created = try await ReminderService.create(
             Reminder(id: nil, title: title, dueAt: due, done: false, repeatRule: "none", createdAt: nil, updatedAt: nil)
         )
-        await NotificationScheduler.schedule(created)
+        NotificationScheduler.schedule(created)
         let formatted = created.dueAt.formatted(date: .abbreviated, time: .shortened)
         return .result(dialog: "Rappel « \(created.title) » notifié le \(formatted).")
     }
