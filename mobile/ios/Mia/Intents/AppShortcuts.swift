@@ -108,7 +108,7 @@ struct MiaShortcuts: AppShortcutsProvider {
             intent: AskMiaIntent(),
             phrases: [
                 "Demander à \(.applicationName)",
-                "Demande à \(.applicationName) \(\.$question)",
+                "Demande à \(.applicationName)",
             ],
             shortTitle: "Demander à Mia",
             systemImageName: "bubble.left.and.bubble.right"
@@ -125,8 +125,8 @@ struct MiaShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: NewReminderIntent(),
             phrases: [
-                "Rappelle-moi \(\.$title) avec \(.applicationName)",
-                "Créer un rappel \(\.$title) à \(\.$date)",
+                "Rappelle-moi avec \(.applicationName)",
+                "Créer un rappel avec \(.applicationName)",
             ],
             shortTitle: "Créer un rappel",
             systemImageName: "bell.badge"
