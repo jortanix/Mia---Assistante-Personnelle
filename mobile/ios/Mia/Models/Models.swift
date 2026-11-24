@@ -2,12 +2,12 @@ import Foundation
 
 // MARK: - Décodage ISO 8601 (y compris secondes fractionnaires)
 
-private let iso8601Plain: ISO8601DateFormatter = {
+let iso8601Plain: ISO8601DateFormatter = {
     let f = ISO8601DateFormatter()
     return f
 }()
 
-private let iso8601Fractional: ISO8601DateFormatter = {
+let iso8601Fractional: ISO8601DateFormatter = {
     let f = ISO8601DateFormatter()
     f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
     return f

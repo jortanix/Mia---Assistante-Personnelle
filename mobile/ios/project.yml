@@ -7,7 +7,7 @@ options:
   xcodeVersion: "16.0"
 settings:
   base:
-    SWIFT_VERSION: "5.10"
+    SWIFT_VERSION: "5.0"
     DEVELOPMENT_ASSET_PATHS: ""
 targets:
   Mia:

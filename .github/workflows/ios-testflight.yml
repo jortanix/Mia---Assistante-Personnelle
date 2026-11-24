@@ -32,7 +32,7 @@ jobs:
       ASC_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
       BUNDLE_ID: fr.mia.app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Installer XcodeGen
         run: brew install xcodegen
@@ -102,7 +102,7 @@ jobs:
 
       - name: Uploader les artefacts (IPA + log)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: testflight-build
           path: |
