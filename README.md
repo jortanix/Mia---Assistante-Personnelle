@@ -15,7 +15,7 @@ MIA/
 │   └── briefing/       Point sur la journée iCloud (CalDAV + IMAP, lecture seule)
 ├── desktop/            Interface React + TypeScript + Vite (127.0.0.1:5173)
 │   └── src/            App, panneaux (Tâches, Mémoire, Concentration), `taskApi.ts`, `stream.ts`
-└── mobile/             Réservé au futur accès iPhone
+└── mobile/             App iPhone native (SwiftUI) + docs
 ```
 
 - `pyproject.toml` / `uv.lock` — projet Python géré par [uv](https://docs.astral.sh/uv/), venv dans `.venv/`.

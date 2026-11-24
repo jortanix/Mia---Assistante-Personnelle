@@ -1,0 +1,42 @@
+name: iOS — Compile check
+
+# Valide que l'app compilable (Xcode, sans signature donc sans compte
+# développeur). Lance-toi manuellement ou à chaque push vers main.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/ios/**"
+      - ".github/workflows/ios-compile.yml"
+  workflow_dispatch:
+
+jobs:
+  compile:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer XcodeGen
+        run: brew install xcodegen
+
+      - name: Générer le projet Xcode
+        working-directory: mobile/ios
+        run: xcodegen generate
+
+      - name: Compiler (sans signature)
+        working-directory: mobile/ios
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild -project Mia.xcodeproj -scheme Mia -configuration Debug \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee build.log
+      - name: Uploader le log de build
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: mobile/ios/build.log

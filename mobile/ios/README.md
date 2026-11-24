@@ -47,6 +47,17 @@ Dans l'app : Réglages → URL du backend (`http://<IP.tailscale>:8000`) + clés
 - **Nouveau rappel** : `NewReminderIntent` — crée un rappel et planifie une
   notification locale.
 
+## Build dans le cloud (TestFlight)
+
+Ton Mac actuel (Air 2013) ne peut pas exécuter Xcode récent : on construit sur
+GitHub Actions et on livre par TestFlight. Voir `docs/build-cloud-testflight.md`.
+
+- `.github/workflows/ios-compile.yml` : vérifie la compilation (aucune clé).
+- `.github/workflows/ios-testflight.yml` : build signé → TestFlight
+  (compte développeur + clé API App Store Connect en secrets).
+- Incrémenter `CURRENT_PROJECT_VERSION` dans `project.yml` avant chaque
+  envoi. `scripts/build.sh` reste utile sur un Mac capable.
+
 ## Contrat d'API utilisé
 
 Documenté dans `docs/mobile-iphone.md` et `backend/assistant/` :
