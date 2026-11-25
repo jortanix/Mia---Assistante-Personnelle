@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   testflight:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 40
     env:
       TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -34,6 +34,29 @@ jobs:
       BUNDLE_ID: fr.mia.app
     steps:
       - uses: actions/checkout@v5
+
+      - name: Sélectionner Xcode ≥ 26 (SDK iOS 26 exigé par Apple)
+        shell: bash
+        run: |
+          # Depuis 2026, App Store Connect refuse tout build compilé avec un
+          # SDK iOS < 26 ("SDK version issue" : iOS 26 SDK inclus dans Xcode 26).
+          # Le runner macos-26 embarque plusieurs Xcode 26.x ; on force la plus
+          # récente pour être déterministe (même si une 27.x devient la
+          # défaut plus tard).
+          XCODE_APP="$(ls -1d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)"
+          if [ -z "$XCODE_APP" ]; then
+            echo "::error::Aucun Xcode 26 trouvé sur le runner."
+            echo "Passe runs-on à 'macos-26' ou installe Xcode 26+."
+            exit 1
+          fi
+          sudo xcode-select -s "$XCODE_APP"
+          xcodebuild -version
+          IOS_SDK="$(xcrun --sdk iphoneos --show-sdk-version)"
+          echo "SDK iOS détecté : $IOS_SDK"
+          if awk -v s="$IOS_SDK" 'BEGIN{ exit !(s+0 < 26) }'; then
+            echo "::error::SDK iOS $IOS_SDK < 26 : l'upload sera refusé par App Store Connect."
+            exit 1
+          fi
 
       - name: Vérifier les secrets requis
         shell: bash

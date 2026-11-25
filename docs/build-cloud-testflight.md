@@ -7,7 +7,7 @@ faits sur les macs de GitHub Actions et l'app arrive sur ton iPhone par
 **TestFlight** — sans câble et sans ton Mac.
 
 ```
-git push (PC) ──> GitHub Actions (macOS, Xcode 16)
+git push (PC) ──> GitHub Actions (macOS, Xcode 26)
                        │ build + signature (compte développeur)
                        ▼
                 App Store Connect / TestFlight
@@ -15,6 +15,11 @@ git push (PC) ──> GitHub Actions (macOS, Xcode 16)
                        ▼
               iPhone (TestFlight) ──Tailscale──> PC (API Mia)
 ```
+
+> ⚠️ **Xcode ≥ 26 obligatoire** : depuis 2026 Apple refuse d'accepter sur
+> App Store Connect un build compilé avec un SDK iOS < 26 (erreur
+> « SDK version issue »). Le workflow `ios-testflight.yml` tourne sur le
+> runner `macos-26` et force Xcode 26.x.
 
 ## Répartition des fichiers
 

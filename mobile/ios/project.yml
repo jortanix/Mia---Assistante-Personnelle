@@ -19,9 +19,19 @@ targets:
       path: Mia/Info.plist
       properties:
         CFBundleDisplayName: Mia
+        CFBundleIconName: AppIcon
         UILaunchScreen: {}
+        # iPhone : portrait uniquement.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        # iPad : Apple exige les 4 orientations (multitâche). Clé par
+        # appareil : sans le suffixe ~ipad, l'iPad hériterait de la liste
+        # iPhone et l'upload serait refusé ("UISupportedInterfaceOrientations").
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         NSMicrophoneUsageDescription: "Mia utilise le micro pour la dictée vocale de tes messages."
         NSSpeechRecognitionUsageDescription: "Mia utilise la reconnaissance vocale pour saisir tes messages à la voix."
         NSAppTransportSecurity:
@@ -37,6 +47,7 @@ targets:
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SWIFT_EMIT_LOC_STRINGS: YES
         CODE_SIGN_STYLE: Automatic
     scheme:
