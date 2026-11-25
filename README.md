@@ -23,7 +23,18 @@ MIA/
 
 ## Démarrage
 
-**Backend** (dans `backend/`), venv au niveau de la racine :
+**Backend** (venv au niveau de la racine). Le plus simple :
+
+```powershell
+cd C:\Users\lmoret1\MIA
+.\start-backend.ps1            # iPhone via Tailscale (0.0.0.0:8000)
+.\start-backend.ps1 -Local     # PC local uniquement (127.0.0.1:8000)
+```
+
+Le script applique les migrations en attente, détecte l'IP/hostname
+Tailscale pour `DJANGO_ALLOWED_HOSTS`, s'occupe des clés (`MIA_API_KEY`,
+`BRIEFING_API_KEY`, mémorisables en variable utilisateur) puis lance
+`runserver`. À la main, c'est :
 
 ```powershell
 Set-Location C:\Users\lmoret1\MIA\backend
