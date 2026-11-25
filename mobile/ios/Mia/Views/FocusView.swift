@@ -88,7 +88,7 @@ final class FocusViewModel: ObservableObject {
         }
     }
 
-    private func apply(_ session: FocusSession, _ op: (FocusSession) async throws -> FocusSession) {
+    private func apply(_ session: FocusSession, _ op: @escaping (FocusSession) async throws -> FocusSession) {
         Task {
             do {
                 let updated = try await op(session)
