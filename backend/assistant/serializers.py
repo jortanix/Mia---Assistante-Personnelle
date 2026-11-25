@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import (
     ActionProposal,
+    BrainrotEvent,
     Conversation,
     Memory,
     Message,
@@ -211,3 +212,22 @@ class ReminderSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class BrainrotSerializer(serializers.ModelSerializer):
+    app = serializers.CharField(
+        max_length=100,
+        allow_blank=True,
+        required=False,
+        default="",
+    )
+
+    class Meta:
+        model = BrainrotEvent
+        fields = [
+            "id",
+            "app",
+            "lapsed",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]

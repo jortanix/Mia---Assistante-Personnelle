@@ -32,6 +32,8 @@ struct RootTabView: View {
                 .tabItem { Label("Tâches", systemImage: "checklist") }
             FocusView()
                 .tabItem { Label("Concentration", systemImage: "timer") }
+            BrainrotView()
+                .tabItem { Label("Brainrot", systemImage: "brain.head.profile") }
             MemoryView()
                 .tabItem { Label("Mémoire", systemImage: "brain") }
             RemindersView()

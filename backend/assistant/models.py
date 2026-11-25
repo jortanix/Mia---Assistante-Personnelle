@@ -185,6 +185,28 @@ class FocusSession(models.Model):
         return f"Session de concentration - {self.label or 'Sans titre'}"
 
 
+class BrainrotEvent(models.Model):
+    """
+    « Cédage » au brainrot : ouverture d'une app distrayante (ou résistance
+    face à elle). Alimente le score quotidien affiché dans l'onglet Brainrot
+    de l'app iOS (cerveau qui se dégrade).
+    """
+
+    app = models.CharField(max_length=100, blank=True)
+    # True = l'app a finalement été ouverte (cédage) ; False = on a résisté.
+    lapsed = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        verbose_name = "Cédage brainrot"
+        verbose_name_plural = "Cédages brainrot"
+
+    def __str__(self):
+        label = self.app or "App inconnue"
+        return f"{label} — {'cédé' if self.lapsed else 'résisté'} ({self.created_at:%d/%m %H:%M})"
+
+
 class Reminder(models.Model):
     """Rappel planifié (utilisé par les notifications de l'app iOS)."""
 

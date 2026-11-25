@@ -128,6 +128,31 @@ enum MemoryService {
     }
 }
 
+enum BrainrotService {
+    static let client = APIClient()
+
+    static func list() async throws -> [BrainrotEvent] {
+        try await client.request("/api/brainrot/")
+    }
+
+    /// Enregistre un « cédage » (app ouverte malgré tout) ou une résistance.
+    static func log(app: String, lapsed: Bool) async throws -> BrainrotEvent {
+        struct Body: Encodable {
+            let app: String
+            let lapsed: Bool
+        }
+        return try await client.request(
+            "/api/brainrot/",
+            method: "POST",
+            body: Body(app: app, lapsed: lapsed)
+        )
+    }
+
+    static func delete(_ event: BrainrotEvent) async throws {
+        try await client.requestNoContent("/api/brainrot/\(event.id)/")
+    }
+}
+
 enum FocusService {
     static let client = APIClient()
 

@@ -241,6 +241,21 @@ struct FocusCompletionReply: Codable {
     }
 }
 
+// MARK: - Brainrot (cédages aux apps distrayantes)
+
+struct BrainrotEvent: Codable, Identifiable {
+    let id: Int
+    /// Nom de l'app qui tentait (vide si non précisé).
+    let app: String
+    /// true = app ouverte malgré tout (cédage) ; false = on a résisté.
+    let lapsed: Bool
+    let createdAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id, app, lapsed, createdAt = "created_at"
+    }
+}
+
 // MARK: - Rappels
 
 struct Reminder: Codable, Identifiable, Equatable {

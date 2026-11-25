@@ -100,6 +100,43 @@ struct NewReminderIntent: AppIntent {
     }
 }
 
+// MARK: - Réveil du matin
+
+struct WakeUpIntent: AppIntent {
+    static var title: LocalizedStringResource = "Réveil avec Mia"
+    static var description = IntentDescription("Le point du matin, à déclencher sur l'arrêt de l'alarme (automation Raccourcis).")
+    static var parameterSummary: some ParameterSummary {
+        Summary("Réveil avec Mia")
+    }
+
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        let point = try await BriefingService.text()
+        return .result(dialog: "Bonjour ! \(point)")
+    }
+}
+
+// MARK: - Brainrot
+
+struct LogBrainrotIntent: AppIntent {
+    static var title: LocalizedStringResource = "Céder au brainrot"
+    static var description = IntentDescription("Enregistre un cédage (app ouverte) ou une résistance ; fait évoluer le cerveau de l'onglet Brainrot.")
+
+    @Parameter(title: "App")
+    var app: String?
+
+    @Parameter(title: "Résisté ?")
+    var resisted: Bool = false
+
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        let event = try await BrainrotService.log(app: app ?? "", lapsed: !resisted)
+        let name = (app?.isEmpty == false) ? app! : "l'app"
+        if event.lapsed {
+            return .result(dialog: "Cédage noté sur \(name). Le cerveau se dégrade…")
+        }
+        return .result(dialog: "Bien joué : résistance sur \(name). Le cerveau te remercie.")
+    }
+}
+
 // MARK: - Raccourcis proposés par l'app
 
 struct MiaShortcuts: AppShortcutsProvider {
@@ -130,6 +167,24 @@ struct MiaShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Créer un rappel",
             systemImageName: "bell.badge"
+        )
+        AppShortcut(
+            intent: WakeUpIntent(),
+            phrases: [
+                "Réveil avec \(.applicationName)",
+                "Point du matin avec \(.applicationName)",
+            ],
+            shortTitle: "Réveil avec Mia",
+            systemImageName: "sunrise.fill"
+        )
+        AppShortcut(
+            intent: LogBrainrotIntent(),
+            phrases: [
+                "Céder au brainrot avec \(.applicationName)",
+                "Noter une résistance avec \(.applicationName)",
+            ],
+            shortTitle: "Céder au brainrot",
+            systemImageName: "brain.head.profile"
         )
     }
 }

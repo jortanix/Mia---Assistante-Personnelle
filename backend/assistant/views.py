@@ -16,6 +16,7 @@ from rest_framework.exceptions import ValidationError
 
 from .models import (
     ActionProposal,
+    BrainrotEvent,
     Conversation,
     Memory,
     Message,
@@ -25,6 +26,7 @@ from .models import (
 )
 from .serializers import (
     ActionProposalSerializer,
+    BrainrotSerializer,
     MemorySerializer,
     ChatRequestSerializer,
     ConversationDetailSerializer,
@@ -231,6 +233,30 @@ def memory_list(request):
 def memory_detail(request, memory_id):
     memory = get_object_or_404(Memory, pk=memory_id)
     memory.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["GET", "POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def brainrot_list(request):
+    """Liste les « cédages » au brainrot, ou en enregistre un nouveau."""
+    if request.method == "GET":
+        events = BrainrotEvent.objects.order_by("-created_at", "-id")
+        return Response(BrainrotSerializer(events, many=True).data)
+
+    serializer = BrainrotSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@api_view(["DELETE"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def brainrot_detail(request, event_id):
+    event = get_object_or_404(BrainrotEvent, pk=event_id)
+    event.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
