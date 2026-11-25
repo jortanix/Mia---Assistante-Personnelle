@@ -110,6 +110,8 @@ struct ChatView: View {
                         guard let last = model.messages.last else { return }
                         withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                     }
+                    // Un geste de scroll replie le clavier.
+                    .scrollDismissesKeyboard(.immediately)
                 }
 
                 if let error = model.errorText {
@@ -120,6 +122,18 @@ struct ChatView: View {
             }
             .navigationTitle("Mia")
             .navigationBarTitleDisplayMode(.inline)
+            // Bouton de repli du clavier, visible au-dessus du clavier.
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button {
+                        inputFocused = false
+                    } label: {
+                        Image(systemName: "keyboard.chevron.compact.down")
+                    }
+                    .accessibilityLabel("Fermer le clavier")
+                }
+            }
         }
     }
 
