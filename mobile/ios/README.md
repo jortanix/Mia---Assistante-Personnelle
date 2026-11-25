@@ -15,7 +15,7 @@ mobile/ios/
     ├── Config/                  URL du backend + clés (trousseau)
     ├── Models/                  Décodables JSON (chat, tâches, briefing…)
     ├── Services/                Client API, chat streamé, dictée, notifications
-    ├── Views/                   Chat, Briefing, Tâches, Concentration, Rappels, Réglages
+    ├── Views/                   Chat, Briefing, Tâches, Concentration, Mémoire, Rappels, Réglages
     └── Intents/                 App Intents Siri/Shortcuts
 ```
 
