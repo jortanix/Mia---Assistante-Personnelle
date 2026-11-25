@@ -124,8 +124,8 @@ struct LogBrainrotIntent: AppIntent {
     @Parameter(title: "App")
     var app: String?
 
-    @Parameter(title: "Résisté ?")
-    var resisted: Bool = false
+    @Parameter(title: "Résisté ?", default: false)
+    var resisted: Bool
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let event = try await BrainrotService.log(app: app ?? "", lapsed: !resisted)
