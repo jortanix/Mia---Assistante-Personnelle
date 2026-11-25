@@ -21,6 +21,10 @@ targets:
         CFBundleDisplayName: Mia
         CFBundleIconName: AppIcon
         UILaunchScreen: {}
+        # Chiffrement : l'app n'utilise que le TLS/HTTPS et le Keychain fournis
+        # par iOS (aucun algorithme embarqué) -> exemptée des règles
+        # d'exportation. false = l'app n'utilise PAS de chiffrement non exempté.
+        ITSAppUsesNonExemptEncryption: false
         # iPhone : portrait uniquement.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
