@@ -199,6 +199,8 @@ struct FocusSession: Codable, Identifiable {
     let completedAt: Date?
     let cycle: Int?
     let completedCycle: Int?
+    let createdAt: Date?
+    let updatedAt: Date?
     let task: Todo?
 
     enum CodingKeys: String, CodingKey {
@@ -207,6 +209,7 @@ struct FocusSession: Codable, Identifiable {
         case label
         case remainingTimeMS = "remaining_time_ms"
         case completedAt = "completed_at"
+        case createdAt = "created_at", updatedAt = "updated_at"
         case completedCycle = "completed_cycle"
     }
 }
@@ -214,9 +217,27 @@ struct FocusSession: Codable, Identifiable {
 struct FocusSessionCreate: Codable {
     let durationMinutes: Int
     let label: String?
+    let taskID: Int?
 
     enum CodingKeys: String, CodingKey {
-        case durationMinutes = "duration_minutes", label
+        case durationMinutes = "duration_minutes", label, taskID = "task"
+    }
+}
+
+/// Réponse des endpoints /complete/ et /undo/ du minuteur de concentration.
+struct FocusCompletionReply: Codable {
+    let message: String
+    let reason: String?
+    let outcome: String?
+    let taskCompleted: Bool?
+    let sessionID: Int?
+    let cycle: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case message, reason, outcome
+        case taskCompleted = "task_completed"
+        case sessionID = "session_id"
+        case cycle
     }
 }
 

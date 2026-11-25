@@ -15,7 +15,7 @@ mobile/ios/
     ├── Config/                  URL du backend + clés (trousseau)
     ├── Models/                  Décodables JSON (chat, tâches, briefing…)
     ├── Services/                Client API, chat streamé, dictée, notifications
-    ├── Views/                   Chat, Briefing, Tâches, Rappels, Réglages
+    ├── Views/                   Chat, Briefing, Tâches, Concentration, Rappels, Réglages
     └── Intents/                 App Intents Siri/Shortcuts
 ```
 
@@ -66,5 +66,7 @@ Documenté dans `docs/mobile-iphone.md` et `backend/assistant/` :
 `GET/POST /api/briefing/` ; `GET /api/tasks/`, `PATCH/DELETE /api/tasks/<id>/`
 (concurrence optimiste `expected_updated_at`) ;
 `GET/POST /api/reminders/`, `PATCH/DELETE /api/reminders/<id>/` ;
+`GET/POST /api/focus-sessions/`, `PATCH /api/focus-sessions/<id>/` (phases
+`running`/`paused`), `POST /api/focus-sessions/<id>/complete|undo|reset/` ;
 les `App Intent` exigent `MIA_API_KEY` pour les clients distants
 (`Authorization: Bearer`) et `BRIEFING_API_KEY` pour le briefing.

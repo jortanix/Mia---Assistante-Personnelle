@@ -131,13 +131,65 @@ enum MemoryService {
 enum FocusService {
     static let client = APIClient()
 
+    private struct PhaseBody: Encodable {
+        let phase: String
+    }
+
+    private struct CycleBody: Encodable {
+        let cycle: Int
+    }
+
     static func list() async throws -> [FocusSession] {
         try await client.request("/api/focus-sessions/")
     }
 
-    static func start(durationMinutes: Int, label: String?) async throws -> FocusSession {
-        let body = FocusSessionCreate(durationMinutes: durationMinutes, label: label)
+    static func start(durationMinutes: Int, label: String?, taskID: Int? = nil) async throws -> FocusSession {
+        let body = FocusSessionCreate(durationMinutes: durationMinutes, label: label, taskID: taskID)
         return try await client.request("/api/focus-sessions/", method: "POST", body: body)
+    }
+
+    /// Transition d'horloge : "running" (départ ou reprise) ou "paused".
+    /// Le serveur garde l'autorité sur le temps restant.
+    static func setPhase(_ session: FocusSession, _ phase: String) async throws -> FocusSession {
+        try await client.request(
+            "/api/focus-sessions/\(session.id)/",
+            method: "PATCH",
+            body: PhaseBody(phase: phase)
+        )
+    }
+
+    /// Termine la session (le serveur n'accepte que si le temps est réellement
+    /// écoulé) et marque la tâche liée comme faite.
+    static func complete(_ session: FocusSession) async throws -> FocusCompletionReply {
+        try await client.request(
+            "/api/focus-sessions/\(session.id)/complete/",
+            method: "POST",
+            body: EmptyBody()
+        )
+    }
+
+    /// Annule le marquage de la tâche effectué par la complétion (ne marche que
+    /// si le résultat enregistré est "completed" et que le cycle correspond).
+    static func undo(_ session: FocusSession) async throws -> FocusCompletionReply {
+        let cycle = session.completedCycle ?? 1
+        return try await client.request(
+            "/api/focus-sessions/\(session.id)/undo/",
+            method: "POST",
+            body: CycleBody(cycle: cycle)
+        )
+    }
+
+    /// Remet la session à zéro (phase "idle"), sans toucher à la tâche.
+    static func reset(_ session: FocusSession) async throws -> FocusSession {
+        try await client.request(
+            "/api/focus-sessions/\(session.id)/reset/",
+            method: "POST",
+            body: EmptyBody()
+        )
+    }
+
+    static func delete(_ session: FocusSession) async throws {
+        try await client.requestNoContent("/api/focus-sessions/\(session.id)/")
     }
 }
 

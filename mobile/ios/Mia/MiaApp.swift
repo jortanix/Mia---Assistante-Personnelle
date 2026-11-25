@@ -30,6 +30,8 @@ struct RootTabView: View {
                 .tabItem { Label("Journée", systemImage: "calendar") }
             TasksView()
                 .tabItem { Label("Tâches", systemImage: "checklist") }
+            FocusView()
+                .tabItem { Label("Concentration", systemImage: "timer") }
             RemindersView()
                 .tabItem { Label("Rappels", systemImage: "bell") }
             SettingsView()
