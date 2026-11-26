@@ -102,6 +102,8 @@ struct ActionProposalData: Codable {
     let title: String?
     let description: String?
     let content: String?
+    /// Expression de temps brute d'un rappel (« dans 1 heure », « à 18h »).
+    let when: String?
 }
 
 // MARK: - Tâches

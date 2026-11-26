@@ -47,6 +47,7 @@ from .services import (
     generate_reply_stream,
 )
 from .memory_rules import detect_memory_preference
+from .reminder_rules import InvalidReminderRequest, parse_reminder_request
 from .task_rules import InvalidTaskRequest, parse_task_request
 from .task_queries import build_task_answer
 from .transcription import (
@@ -294,6 +295,16 @@ def chat(request):
             }
         )
 
+    reminder_analysis = _run_reminder_analysis(message)
+    if reminder_analysis.get("action") == "create_reminder":
+        proposal = _create_reminder_proposal_turn(conversation, message, reminder_analysis)
+        return Response(
+            {
+                "conversation_id": conversation.pk,
+                "action_proposal": ActionProposalSerializer(proposal).data,
+            }
+        )
+
     try:
         reply = generate_reply(message, history=history, use_memory=data.get("use_memory", False))
     except OllamaUnavailableError as exc:
@@ -357,6 +368,17 @@ def chat_stream(request):
             analysis = _run_action_analysis(message)
             if analysis.get("action") == "create_task":
                 proposal = _create_proposal_turn(conversation, message, analysis)
+                yield _encode_stream_event("delta", content=proposal.assistant_message.content)
+                yield _encode_stream_event(
+                    "done",
+                    conversation_id=conversation_id,
+                    action_proposal=ActionProposalSerializer(proposal).data,
+                )
+                return
+
+            reminder_analysis = _run_reminder_analysis(message)
+            if reminder_analysis.get("action") == "create_reminder":
+                proposal = _create_reminder_proposal_turn(conversation, message, reminder_analysis)
                 yield _encode_stream_event("delta", content=proposal.assistant_message.content)
                 yield _encode_stream_event(
                     "done",
@@ -982,6 +1004,13 @@ def _run_action_analysis(message):
         raise ValidationError({"error": str(exc)}) from exc
 
 
+def _run_reminder_analysis(message):
+    try:
+        return parse_reminder_request(message)
+    except InvalidReminderRequest as exc:
+        raise ValidationError({"error": str(exc)}) from exc
+
+
 @transaction.atomic
 def _create_proposal_turn(conversation, user_message, analysis):
     serializer = TaskSerializer(data=analysis["data"])
@@ -1005,6 +1034,34 @@ def _create_proposal_turn(conversation, user_message, analysis):
         conversation=conversation,
         assistant_message=assistant_message,
         action=ActionProposal.Action.CREATE_TASK,
+        data=data,
+    )
+    _update_auto_title(conversation, user_message)
+    conversation.save(update_fields=["updated_at"])
+    return proposal
+
+
+@transaction.atomic
+def _create_reminder_proposal_turn(conversation, user_message, analysis):
+    data = {
+        "title": analysis["data"]["title"],
+        "when": analysis["data"].get("when", ""),
+    }
+    Message.objects.create(
+        conversation=conversation, role=Message.Role.USER, content=user_message,
+    )
+    assistant_message = Message.objects.create(
+        conversation=conversation,
+        role=Message.Role.ASSISTANT,
+        content=(
+            f"Je te propose de créer ce rappel : {data['title']}. "
+            "Choisis l'heure ci-dessous puis confirme. Rien n'est encore programmé."
+        ),
+    )
+    proposal = ActionProposal.objects.create(
+        conversation=conversation,
+        assistant_message=assistant_message,
+        action=ActionProposal.Action.CREATE_REMINDER,
         data=data,
     )
     _update_auto_title(conversation, user_message)

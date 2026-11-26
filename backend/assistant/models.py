@@ -65,6 +65,7 @@ class Task(models.Model):
 class ActionProposal(models.Model):
     class Action(models.TextChoices):
         CREATE_TASK = "create_task", "Créer une tâche"
+        CREATE_REMINDER = "create_reminder", "Créer un rappel"
         SAVE_MEMORY = "save_memory", "Retenir une préférence"
 
     class Status(models.TextChoices):

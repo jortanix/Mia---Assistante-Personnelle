@@ -13,7 +13,12 @@ enum ChatService {
             return text
         }
         if let proposal = reply.actionProposal {
-            return "Créer la tâche « \(proposal.data?.title ?? "?" ) » ? (voir onglet Tâches pour confirmer)"
+            switch proposal.action {
+            case "create_reminder":
+                return "📌 Je te propose un rappel « \(proposal.data?.title ?? "?") » — je te laisse le programmer dans le chat."
+            default:
+                return "Créer la tâche « \(proposal.data?.title ?? "?") » ? (voir onglet Tâches pour confirmer)"
+            }
         }
         return "Aucune réponse."
     }
