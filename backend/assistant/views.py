@@ -47,7 +47,7 @@ from .services import (
     generate_reply_stream,
 )
 from .memory_rules import detect_memory_preference
-from .reminder_rules import InvalidReminderRequest, parse_reminder_request
+from .reminder_rules import InvalidReminderRequest, interpret_when, parse_reminder_request
 from .task_rules import InvalidTaskRequest, parse_task_request
 from .task_queries import build_task_answer
 from .transcription import (
@@ -287,21 +287,23 @@ def chat(request):
     analysis = _run_action_analysis(message)
 
     if analysis.get("action") == "create_task":
-        proposal = _create_proposal_turn(conversation, message, analysis)
+        assistant_message, task = _create_task_direct(conversation, message, analysis)
         return Response(
             {
                 "conversation_id": conversation.pk,
-                "action_proposal": ActionProposalSerializer(proposal).data,
+                "reply": assistant_message.content,
+                "task": TaskSerializer(task).data,
             }
         )
 
     reminder_analysis = _run_reminder_analysis(message)
     if reminder_analysis.get("action") == "create_reminder":
-        proposal = _create_reminder_proposal_turn(conversation, message, reminder_analysis)
+        assistant_message, reminder = _create_reminder_direct(conversation, message, reminder_analysis)
         return Response(
             {
                 "conversation_id": conversation.pk,
-                "action_proposal": ActionProposalSerializer(proposal).data,
+                "reply": assistant_message.content,
+                "reminder": ReminderSerializer(reminder).data,
             }
         )
 
@@ -367,23 +369,23 @@ def chat_stream(request):
 
             analysis = _run_action_analysis(message)
             if analysis.get("action") == "create_task":
-                proposal = _create_proposal_turn(conversation, message, analysis)
-                yield _encode_stream_event("delta", content=proposal.assistant_message.content)
+                assistant_message, task = _create_task_direct(conversation, message, analysis)
+                yield _encode_stream_event("delta", content=assistant_message.content)
                 yield _encode_stream_event(
                     "done",
                     conversation_id=conversation_id,
-                    action_proposal=ActionProposalSerializer(proposal).data,
+                    task=TaskSerializer(task).data,
                 )
                 return
 
             reminder_analysis = _run_reminder_analysis(message)
             if reminder_analysis.get("action") == "create_reminder":
-                proposal = _create_reminder_proposal_turn(conversation, message, reminder_analysis)
-                yield _encode_stream_event("delta", content=proposal.assistant_message.content)
+                assistant_message, reminder = _create_reminder_direct(conversation, message, reminder_analysis)
+                yield _encode_stream_event("delta", content=assistant_message.content)
                 yield _encode_stream_event(
                     "done",
                     conversation_id=conversation_id,
-                    action_proposal=ActionProposalSerializer(proposal).data,
+                    reminder=ReminderSerializer(reminder).data,
                 )
                 return
 
@@ -1012,41 +1014,31 @@ def _run_reminder_analysis(message):
 
 
 @transaction.atomic
-def _create_proposal_turn(conversation, user_message, analysis):
+def _create_task_direct(conversation, user_message, analysis):
+    """Crée la tâche immédiatement (action Jarvis : zéro confirmation)."""
     serializer = TaskSerializer(data=analysis["data"])
     serializer.is_valid(raise_exception=True)
-    data = {
-        "title": serializer.validated_data["title"],
-        "description": serializer.validated_data.get("description", ""),
-    }
+    task = serializer.save()
     Message.objects.create(
         conversation=conversation, role=Message.Role.USER, content=user_message,
     )
     assistant_message = Message.objects.create(
         conversation=conversation,
         role=Message.Role.ASSISTANT,
-        content=(
-            f"Je te propose d'ajouter la tâche : {data['title']}. "
-            "Choisis Ajouter ou Annuler sous ma réponse. Rien n'est encore ajouté."
-        ),
-    )
-    proposal = ActionProposal.objects.create(
-        conversation=conversation,
-        assistant_message=assistant_message,
-        action=ActionProposal.Action.CREATE_TASK,
-        data=data,
+        content=f"✅ Tâche ajoutée : {task.title}. Retrouve-la dans l'onglet Tâches.",
     )
     _update_auto_title(conversation, user_message)
     conversation.save(update_fields=["updated_at"])
-    return proposal
+    return assistant_message, task
 
 
 @transaction.atomic
-def _create_reminder_proposal_turn(conversation, user_message, analysis):
-    data = {
-        "title": analysis["data"]["title"],
-        "when": analysis["data"].get("when", ""),
-    }
+def _create_reminder_direct(conversation, user_message, analysis):
+    """Crée le rappel et calcule son échéance immédiatement (zéro confirmation)."""
+    data = analysis["data"]
+    title = data["title"]
+    due_at = interpret_when(data.get("when", ""))
+    reminder = Reminder.objects.create(title=title, due_at=due_at)
     Message.objects.create(
         conversation=conversation, role=Message.Role.USER, content=user_message,
     )
@@ -1054,16 +1046,10 @@ def _create_reminder_proposal_turn(conversation, user_message, analysis):
         conversation=conversation,
         role=Message.Role.ASSISTANT,
         content=(
-            f"Je te propose de créer ce rappel : {data['title']}. "
-            "Choisis l'heure ci-dessous puis confirme. Rien n'est encore programmé."
+            f"✅ C'est noté : je te rappellerai « {title} » "
+            f"le {due_at:%d/%m} à {due_at:%H:%M}."
         ),
-    )
-    proposal = ActionProposal.objects.create(
-        conversation=conversation,
-        assistant_message=assistant_message,
-        action=ActionProposal.Action.CREATE_REMINDER,
-        data=data,
     )
     _update_auto_title(conversation, user_message)
     conversation.save(update_fields=["updated_at"])
-    return proposal
+    return assistant_message, reminder

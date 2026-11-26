@@ -12,13 +12,8 @@ enum ChatService {
         if let text = reply.reply, !text.isEmpty {
             return text
         }
-        if let proposal = reply.actionProposal {
-            switch proposal.action {
-            case "create_reminder":
-                return "📌 Je te propose un rappel « \(proposal.data?.title ?? "?") » — je te laisse le programmer dans le chat."
-            default:
-                return "Créer la tâche « \(proposal.data?.title ?? "?") » ? (voir onglet Tâches pour confirmer)"
-            }
+        if let proposal = reply.actionProposal, let content = proposal.data?.content ?? proposal.data?.title, !content.isEmpty {
+            return "Veux-tu que je retienne : \(content) ?"
         }
         return "Aucune réponse."
     }

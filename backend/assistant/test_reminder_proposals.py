@@ -1,11 +1,13 @@
 import json
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import ActionProposal, Conversation, Reminder
-from .reminder_rules import InvalidReminderRequest, parse_reminder_request
+from .reminder_rules import InvalidReminderRequest, interpret_when, parse_reminder_request
 
 
 class ReminderRulesTests(TestCase):
@@ -60,8 +62,40 @@ class ReminderRulesTests(TestCase):
                     parse_reminder_request(text)
 
 
-class ReminderProposalFlowTests(TestCase):
-    def propose(self, message):
+class InterpretWhenTests(TestCase):
+    def assertFuture(self, hint, hours, minutes=0):
+        now = timezone.now()
+        due = interpret_when(hint, now=now)
+        self.assertGreater(due, now, f"{hint!r} doit être dans le futur")
+        delta = due - now
+        self.assertAlmostEqual(
+            delta.total_seconds() / 3600, hours + minutes / 60, delta=0.5
+        )
+
+    def test_relative_delays(self):
+        self.assertFuture("dans 1 heure", 1)
+        self.assertFuture("dans 30 minutes", 0, 30)
+        self.assertFuture("dans 2 jours", 48)
+
+    def test_absolute_clock_is_future(self):
+        # « à 7h » demande à 10h désigne demain : toujours dans le futur.
+        now = timezone.now()
+        due = interpret_when("à 7h", now=now)
+        self.assertGreater(due, now)
+
+    def test_unknown_falls_back_to_one_hour(self):
+        self.assertFuture("", 1)
+
+    def test_noon_vs_afternoon_not_confused(self):
+        now = timezone.now()
+        midday = interpret_when("à midi", now=now)
+        afternoon = interpret_when("cet après-midi", now=now)
+        self.assertEqual(midday.hour, 12)
+        self.assertEqual(afternoon.hour, 15)
+
+
+class ReminderDirectFlowTests(TestCase):
+    def stream_events(self, message):
         with patch("assistant.views.generate_reply_stream") as generate:
             response = self.client.post(
                 reverse("chat-stream"),
@@ -75,36 +109,44 @@ class ReminderProposalFlowTests(TestCase):
             ]
             generate.assert_not_called()
         self.assertEqual([event["type"] for event in events], ["start", "delta", "done"])
-        return events[-1]["action_proposal"]
+        return events
 
-    def test_stream_proposes_reminder_without_creating_it(self):
-        proposal = self.propose("Rappelle-moi de boire de l'eau dans 1 heure.")
-        self.assertEqual(proposal["action"], "create_reminder")
-        self.assertEqual(proposal["status"], "pending")
-        self.assertEqual(proposal["data"]["title"], "boire de l'eau")
-        self.assertEqual(proposal["data"]["when"], "dans 1 heure")
-        self.assertEqual(Reminder.objects.count(), 0)
+    def test_stream_creates_reminder_directly(self):
+        events = self.stream_events("Rappelle-moi de boire de l'eau dans 1 heure.")
+        reminder = events[-1]["reminder"]
+        self.assertEqual(reminder["title"], "boire de l'eau")
+        self.assertEqual(Reminder.objects.count(), 1)
+        saved = Reminder.objects.get()
+        self.assertEqual(saved.title, "boire de l'eau")
+        self.assertGreater(saved.due_at, timezone.now())
+        self.assertIn("boire de l'eau", events[-2]["content"])
+        # Plus aucune proposition à confirmer.
+        self.assertNotIn("action_proposal", events[-1])
+        self.assertEqual(ActionProposal.objects.count(), 0)
 
-    def test_non_streaming_chat_proposes_reminder_too(self):
+    def test_reveil_title(self):
+        events = self.stream_events("Réveille-moi à 7h")
+        self.assertEqual(events[-1]["reminder"]["title"], "Réveil")
+        self.assertGreater(Reminder.objects.get().due_at, timezone.now())
+
+    def test_non_streaming_chat_creates_reminder_too(self):
         response = self.client.post(
             reverse("chat"), data={"message": "Rappelle-moi d'éteindre le four à 20h"}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["action_proposal"]["action"], "create_reminder")
-        self.assertEqual(Reminder.objects.count(), 0)
+        body = response.json()
+        self.assertEqual(body["reminder"]["title"], "éteindre le four")
+        self.assertIn("éteindre le four", body["reply"])
+        self.assertEqual(Reminder.objects.count(), 1)
 
-    def test_reminder_proposal_is_stored_and_visible_in_conversation(self):
-        proposal = self.propose("Rappelle-moi de faire du sport demain à 18h")
+    def test_conversation_has_both_messages(self):
+        self.stream_events("Rappelle-moi de faire du sport demain à 18h")
         conversation = Conversation.objects.get()
-        saved = ActionProposal.objects.get(pk=proposal["id"])
-        self.assertEqual(saved.action, ActionProposal.Action.CREATE_REMINDER)
-        response = self.client.get(
-            reverse("conversation-detail", kwargs={"conversation_id": conversation.pk})
-        )
-        self.assertEqual(response.status_code, 200)
-        result = response.json()["action_proposals"][0]
-        self.assertEqual(result["id"], proposal["id"])
-        self.assertEqual(result["data"]["title"], "faire du sport")
+        roles = [
+            m.role for m in conversation.messages.order_by("created_at", "id")
+        ]
+        self.assertEqual(roles, ["user", "assistant"])
+        self.assertEqual(Reminder.objects.count(), 1)
 
     @patch("assistant.views.generate_reply_stream")
     def test_ordinary_chat_is_unchanged(self, generate):
@@ -118,6 +160,13 @@ class ReminderProposalFlowTests(TestCase):
             json.loads(line)
             for line in b"".join(response.streaming_content).decode().splitlines()
         ]
-        self.assertNotIn("action_proposal", events[-1])
+        self.assertNotIn("reminder", events[-1])
         self.assertEqual(ActionProposal.objects.count(), 0)
         self.assertEqual(Reminder.objects.count(), 0)
+
+    def test_list_shows_created_reminder(self):
+        self.stream_events("Rappelle-moi de payer la facture demain à 9h")
+        response = self.client.get(reverse("reminder-list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["title"], "payer la facture")

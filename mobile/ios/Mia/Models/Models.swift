@@ -60,9 +60,12 @@ struct ChatReply: Codable {
     let conversationID: Int?
     let reply: String?
     let actionProposal: ActionProposal?
+    /// Rappel créé directement (action Jarvis, zéro confirmation).
+    let reminder: Reminder?
 
     enum CodingKeys: String, CodingKey {
         case conversationID = "conversation_id", reply, actionProposal = "action_proposal"
+        case reminder
     }
 }
 
@@ -73,11 +76,14 @@ struct StreamEvent: Codable {
     let content: String?
     let message: String?
     let actionProposal: ActionProposal?
+    /// Rappel créé directement par Mia (à planifier comme notification locale).
+    let reminder: Reminder?
 
     enum CodingKeys: String, CodingKey {
         case type, content, message
         case conversationID = "conversation_id"
         case actionProposal = "action_proposal"
+        case reminder
     }
 }
 
@@ -102,8 +108,6 @@ struct ActionProposalData: Codable {
     let title: String?
     let description: String?
     let content: String?
-    /// Expression de temps brute d'un rappel (« dans 1 heure », « à 18h »).
-    let when: String?
 }
 
 // MARK: - Tâches

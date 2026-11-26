@@ -7,22 +7,12 @@ struct ChatMessage: Identifiable, Equatable {
     var content: String
 }
 
-/// Proposition de rappel en attente de confirmation dans le chat.
-struct PendingReminder {
-    var title: String
-    var dueAt: Date
-    let whenHint: String
-}
-
 @MainActor
 final class ChatViewModel: ObservableObject {
     @Published var messages: [ChatMessage] = []
     @Published var isBusy = false
     @Published var errorText: String?
     @Published var draft = ""
-    /// Proposition de rappel à confirmer (carte sous la conversation).
-    @Published var pendingReminder: PendingReminder?
-    @Published var isScheduling = false
 
     let dictation = DictationManager()
     private var cancellables: Set<AnyCancellable> = []
@@ -72,76 +62,23 @@ final class ChatViewModel: ObservableObject {
         case "error":
             messages[index].content = "⚠︎ \(event.message ?? "Erreur inconnue")"
         case "done":
-            if let proposal = event.actionProposal {
-                switch proposal.action {
-                case "create_task":
-                    messages[index].content +=
-                        "\n\n→ Proposition : créer la tâche « \(proposal.data?.title ?? "?") ». Disponible dans l'onglet Tâches."
-                case "create_reminder":
-                    presentReminderProposal(proposal, at: index)
-                default:
-                    break
-                }
+            // Mia a créé un rappel côté serveur (action Jarvis, sans
+            // confirmation) : on planifie la notification locale à son échéance.
+            if let reminder = event.reminder {
+                scheduleReminder(reminder)
             }
         default:
             break
         }
     }
 
-    /// Affiche la carte de rappel pré-remplie par le titre et l'expression de
-    /// temps bruts du backend (« dans 1 heure », « à 18h », « demain à 9h »).
-    private func presentReminderProposal(_ proposal: ActionProposal, at index: Int) {
-        let title = (proposal.data?.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let hint = proposal.data?.when ?? ""
-        let due = ReminderWhen.parse(hint) ?? Date().addingTimeInterval(3600)
-        pendingReminder = PendingReminder(title: title, dueAt: due, whenHint: hint)
-        messages[index].content +=
-            "\n\n📌 Je te propose un rappel : « \(title) » — vérifie l'horaire puis programme-le."
-    }
-
-    /// Crée le rappel (transforme la proposition en rappel réel côté serveur)
-    /// puis planifie la notification locale. N'utilise volontairement pas
-    /// `rescheduleAll` pour ne pas effacer les notifications déjà en attente.
-    func confirmReminder() {
-        guard let pending = pendingReminder, !isScheduling else { return }
-        let title = pending.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !title.isEmpty else {
-            errorText = "Précise ce que je dois te rappeler."
-            return
-        }
-        isScheduling = true
+    /// Demande l'autorisation de notifier (une seule fois) puis programme la
+    /// notification. Le message de confirmation est déjà dans la réponse de Mia.
+    private func scheduleReminder(_ reminder: Reminder) {
         Task {
-            defer { isScheduling = false }
-            do {
-                guard await NotificationScheduler.requestAuthorization() else {
-                    errorText = "Autorisation des notifications refusée. Active-la dans Réglages > Notifications."
-                    return
-                }
-                let created = try await ReminderService.create(
-                    Reminder(id: nil, title: title, dueAt: pending.dueAt, done: false,
-                             repeatRule: "none", createdAt: nil, updatedAt: nil)
-                )
-                NotificationScheduler.schedule(created)
-                pendingReminder = nil
-                messages.append(ChatMessage(
-                    role: "mia",
-                    content: "✅ Rappel programmé : « \(created.title) » \(created.dueAt.formatted(date: .abbreviated, time: .shortened))."
-                ))
-            } catch {
-                errorText = "Impossible de créer le rappel : \(error.localizedDescription)"
-            }
+            guard await NotificationScheduler.requestAuthorization() else { return }
+            NotificationScheduler.schedule(reminder)
         }
-    }
-
-    func cancelReminder() {
-        pendingReminder = nil
-    }
-
-    func updatePendingReminder(title: String? = nil, due: Date? = nil) {
-        guard var pending = pendingReminder else { return }
-        if let title { pending.title = title }
-        if let due { pending.dueAt = due }
-        pendingReminder = pending
     }
 
     func startDictation() {
@@ -191,12 +128,6 @@ struct ChatView: View {
                     Text(error).font(.footnote).foregroundStyle(.red).padding(.horizontal)
                 }
 
-                if model.pendingReminder != nil {
-                    reminderCard
-                        .padding(.horizontal)
-                        .padding(.bottom, 4)
-                }
-
                 inputBar
             }
             .navigationTitle("Mia")
@@ -241,55 +172,6 @@ struct ChatView: View {
             if message.role == "mia" { Spacer(minLength: 48) }
         }
         .id(message.id)
-    }
-
-    private var reminderCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label("Rappel proposé", systemImage: "bell.badge")
-                .font(.subheadline.bold())
-                .accessibilityAddTraits(.isHeader)
-
-            if let hint = model.pendingReminder?.whenHint, !hint.isEmpty {
-                Text("Détecté : « \(hint) »")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            TextField("Que dois-je te rappeler ?", text: Binding(
-                get: { model.pendingReminder?.title ?? "" },
-                set: { model.updatePendingReminder(title: $0) }
-            ))
-            .textFieldStyle(.roundedBorder)
-            .disabled(model.isScheduling)
-
-            DatePicker(
-                "Quand",
-                selection: Binding(
-                    get: { model.pendingReminder?.dueAt ?? Date() },
-                    set: { model.updatePendingReminder(due: $0) }
-                ),
-                displayedComponents: [.date, .hourAndMinute]
-            )
-            .disabled(model.isScheduling)
-
-            HStack {
-                Button("Annuler", role: .cancel) { model.cancelReminder() }
-                    .disabled(model.isScheduling)
-                Spacer()
-                Button {
-                    model.confirmReminder()
-                } label: {
-                    if model.isScheduling {
-                        ProgressView().controlSize(.small)
-                    } else {
-                        Text("Programmer")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-            }
-        }
-        .padding()
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
     }
 
     private var inputBar: some View {
