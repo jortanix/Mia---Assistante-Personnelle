@@ -76,7 +76,13 @@ final class ChatViewModel: ObservableObject {
     /// notification. Le message de confirmation est déjà dans la réponse de Mia.
     private func scheduleReminder(_ reminder: Reminder) {
         Task {
-            guard await NotificationScheduler.requestAuthorization() else { return }
+            guard await NotificationScheduler.requestAuthorization() else {
+                messages.append(ChatMessage(
+                    role: "mia",
+                    content: "⚠️ Le rappel est enregistré dans l'onglet Rappels, mais je ne peux pas t'envoyer de notification : elles sont désactivées. Active-les dans Réglages > Notifications."
+                ))
+                return
+            }
             NotificationScheduler.schedule(reminder)
         }
     }
