@@ -21,10 +21,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--=z)s7vo0zu08t!o-bt%_=@t+kj&wkp3bq00q15guhl1awb&gu'
+# Surchargeable en production (DJANGO_SECRET_KEY) ; la valeur ci-dessous ne
+# sert qu'au développement local.
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "django-insecure--=z)s7vo0zu08t!o-bt%_=@t+kj&wkp3bq00q15guhl1awb&gu",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Désactiver en production avec DJANGO_DEBUG=false (Docker).
+DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() in ("1", "true", "yes", "on")
 
 # Hôtes autorisés : local par défaut. Pour l'accès iPhone via Tailscale,
 # ajouter DJANGO_ALLOWED_HOSTS=mia-pc,<hostname.ts.net> à l'environnement.
@@ -87,7 +93,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        # Chemin remplaçable en production (MIA_DB_PATH, ex. volume Docker) ;
+        # en local, la base reste backend/db.sqlite3 comme avant.
+        'NAME': os.environ.get("MIA_DB_PATH", BASE_DIR / 'db.sqlite3'),
         # Délai d'attente d'un verrou d'écriture (secondes) et mode de
         # transaction IMMEDIATE : sans cela, une requête qui lit puis écrit
         # (comme /complete/ ou /undo/) se retrouve en impasse classique de
@@ -144,6 +152,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+# Cible de collectstatic pour la production (MIA_STATIC_ROOT en Docker) ;
+# inutile en local : runserver sert les statiques quand DEBUG est vrai.
+STATIC_ROOT = os.environ.get("MIA_STATIC_ROOT", BASE_DIR / "staticfiles")
 
 
 # Email
@@ -155,9 +166,11 @@ MAILERS = {
     },
 }
 
-OLLAMA_BASE_URL = "http://localhost:11434"
-OLLAMA_MODEL = "qwen3:4b-instruct"
-OLLAMA_TIMEOUT = 120
+# Surchargeables en environnement — Docker : OLLAMA_BASE_URL=http://ollama:11434.
+# Les défauts ci-dessous correspondent au PC local.
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen3:4b-instruct")
+OLLAMA_TIMEOUT = int(os.environ.get("OLLAMA_TIMEOUT", "120") or "120")
 
 # Briefing iCloud (agenda + mails, lecture seule).
 # Ces valeurs sont surtout documentaires : la source effective au moment de

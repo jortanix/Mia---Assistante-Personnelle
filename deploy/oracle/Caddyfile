@@ -1,0 +1,28 @@
+# Reverse-proxy HTTPS de MIA — écrit par Caddy (Let's Encrypt automatique).
+# DOMAIN est injecté par docker-compose (variable du conteneur Caddy).
+{$DOMAIN} {
+	encode gzip
+
+	# Admin Django : les statiques collectées sont servies directement
+	# (le préfixe /static est retiré ; le dossier vient du volume partagé).
+	handle /static/* {
+		uri strip_prefix /static
+		root * /app/data/staticfiles
+		file_server
+	}
+
+	# API + flux Server-Sent Events du chat : pas de mise en tampon
+	# (flush_interval -1), sinon les « deltas » s'afficheraient par paquets.
+	handle {
+		reverse_proxy backend:8000 {
+			flush_interval -1
+		}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+	}
+}

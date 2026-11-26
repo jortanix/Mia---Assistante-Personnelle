@@ -1,0 +1,67 @@
+# MIA — stack de production (VM Oracle Cloud Always Free / Ampere ARM, ou
+# n'importe quelle VM Linux). Démarrage : cp .env.example .env puis ./setup.sh
+#
+# Services :
+#   ollama  — moteur local (ARM natif) ; réseau Docker interne SEULEMENT,
+#             jamais exposé sur le port public.
+#   backend — Django + gunicorn ; config via .env ; base SQLite + statiques +
+#             cache Whisper sur des volumes persistants.
+#   caddy   — reverse-proxy HTTPS (certificat Let's Encrypt automatique) :
+#             sert /static/ (admin Django) et l'API, flux SSE non tamponnés.
+name: mia
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  backend:
+    build:
+      context: ../..
+      dockerfile: deploy/oracle/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Ollama est joignable sur le réseau Docker interne par son nom.
+      OLLAMA_BASE_URL: http://ollama:11434
+      # DEBUG=false + hôtes restreints : production.
+      DJANGO_DEBUG: "false"
+      DJANGO_ALLOWED_HOSTS: "${DOMAIN}"
+      MIA_DB_PATH: /app/data/db.sqlite3
+      MIA_STATIC_ROOT: /app/data/staticfiles
+    volumes:
+      - mia-data:/app/data
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: "${DOMAIN}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+      # Statiques collectées par le backend (même volume, monté en lecture seule).
+      - mia-data:/app/data:ro
+    depends_on:
+      - backend
+
+volumes:
+  mia-data:
+  ollama-models:
+  caddy-data:
+  caddy-config:
